@@ -19,20 +19,17 @@ def do_pack():
     """
     time = datetime.utcnow().strftime('%Y%m%d%H%M%S')
     file_name = "versions/web_static_{}.tgz".format(time)
-    try:
-        local("mkdir -p ./versions")
-        local("tar --create --verbose -z --file={} ./web_static"
-              .format(file_name))
-        return file_name
-    except Exception:
+    result = local("tar -cvzf {} ./web_static".format(file_name))
+    if result.failed:
         return None
+    return file_name
 
 
 def do_deploy(archive_path):
     """
         using fabric to distribute archive
     """
-    if os.path.isfile(archive_path) is False:
+    if not os.path.exists(archive_path):
         return False
     try:
         archive = archive_path.split("/")[-1]
