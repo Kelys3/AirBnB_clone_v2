@@ -15,7 +15,7 @@ created_path = None
 
 def do_pack():
     """
-        generates a .tgz archine from contents of web_static
+        generates a .tgz archive from contents of web_static
     """
     time = datetime.utcnow().strftime('%Y%m%d%H%M%S')
     file_name = "versions/web_static_{}.tgz".format(time)
@@ -24,7 +24,7 @@ def do_pack():
         local("tar --create --verbose -z --file={} ./web_static"
               .format(file_name))
         return file_name
-    except:
+    except Exception:
         return None
 
 
@@ -50,8 +50,9 @@ def do_deploy(archive_path):
         run("rm -rf /data/web_static/current")
         run("ln -sf {}/{} /data/web_static/current"
             .format(path, folder[0]))
+        print("New version deployed!")
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -65,3 +66,7 @@ def deploy():
     if created_path is None:
         return False
     return do_deploy(created_path)
+
+
+if __name__ == "__main__":
+    deploy()
