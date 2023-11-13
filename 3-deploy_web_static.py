@@ -9,7 +9,7 @@ from fabric.operations import run, put, sudo, local
 from datetime import datetime
 import os
 
-env.hosts = ['54.144.154.247', '54.89.27.191']
+env.hosts = ['100.25.197.148', '54.158.210.206']
 created_path = None
 
 
@@ -24,7 +24,8 @@ def do_pack():
         local("tar --create --verbose -z --file={} "
               "./web_static".format(file_name))
         return file_name
-    except Exception:
+    except Exception as e:
+        print(f"Error in do_pack: {e}")
         return None
 
 
@@ -32,12 +33,12 @@ def do_deploy(archive_path):
     """
         using fabric to distribute archive
     """
-    if not os.path.exists(archive_path):
+    if not os.path.isfile(archive_path):
         return False
     try:
-        archive = archive_path.split("/")[-1]
+        archive = os.path.basename(archive_path)
         path = "/data/web_static/releases"
-        put("{}".format(archive_path), "/tmp/{}".format(archive))
+        put(archive_path, "/tmp/{}".format(archive))
         folder = archive.split(".")
         run("mkdir -p {}/{}/".format(path, folder[0]))
         new_archive = '.'.join(folder)
@@ -52,7 +53,8 @@ def do_deploy(archive_path):
             .format(path, folder[0]))
         print("New version deployed!")
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Error in do_deploy: {e}")
         return False
 
 
