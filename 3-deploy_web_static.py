@@ -1,66 +1,66 @@
 #!/usr/bin/python3
-# Sets up a web server for deployment of web_static
-"""
-    Fabric script that creates and distributes an archive
-    on my web servers, using deploy function
-"""
-from fabric.api import *
-from fabric.operations import run, put, sudo, local
+"""a fabric script to create an archive file
+and deployes it to a remote server """
+from fabric.api import local
 from datetime import datetime
-import os
+from fabric.api import run, env, put
+import os.path
 
-env.hosts = ['100.25.197.148', '54.158.210.206']
-created_path = None
+env.hosts = ['54.144.154.247', '54.87.27.191']
+env.key_filename = '~/.ssh/school'
+env.user = 'ubuntu'
 
 
 def do_pack():
-    """
-        generates a .tgz archive from contents of web_static
-    """
-    file_name = "versions/web_static_$(date '+%Y%m%d%H%M%S').tgz"
+    """ a method to compress a file and return it's path """
+
+    """saving the current timestamp and creatinf filename"""
+    time_now = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_path = "versions/web_static_{}.tgz".format(time_now)
+
     try:
-        local("mkdir -p ./versions")
-        local("tar -cvzf{} ./web_static".format(file_name))
-        return file_name
-    except Exception:
+        """create a directory called versions"""
+        local("mkdir -p versions")
+
+        """create an archive file"""
+        local("tar -cvzf {} web_static/".format(file_path))
+
+        """return the path to the archive file created"""
+        return "{}".format(file_path)
+
+        """return none if an error occurs"""
+    except Exception as e:
         return None
 
 
 def do_deploy(archive_path):
-    """
-        using fabric to distribute archive
-    """
-    if not os.path.exists(archive_path):
+    """a function to deploy code and decompress it"""
+
+    if not os.path.isfile(archive_path):
         return False
+    compressed_file = archive_path.split("/")[-1]
+    no_extension = compressed_file.split(".")[0]
+
     try:
-        archive = os.path.basename(archive_path)
-        path = "/data/web_static/releases"
-        put(archive_path, "/tmp/{}".format(archive))
-        folder = archive.split(".")
-        run("mkdir -p {}/{}/".format(path, folder[0]))
-        new_archive = '.'.join(folder)
-        run("tar -xzf /tmp/{} -C {}/{}/"
-            .format(new_archive, path, folder[0]))
-        run("rm /tmp/{}".format(archive))
-        run("mv {}/{}/web_static/* {}/{}/"
-            .format(path, folder[0], path, folder[0]))
-        run("rm -rf {}/{}/web_static".format(path, folder[0]))
-        run("rm -rf /data/web_static/current")
-        run("ln -sf {}/{} /data/web_static/current"
-            .format(path, folder[0]))
-        print("New version deployed!")
+        remote_path = "/data/web_static/releases/{}/".format(no_extension)
+        sym_link = "/data/web_static/current"
+        put(archive_path, "/tmp/")
+        run("sudo mkdir -p {}".format(remote_path))
+        run("sudo tar -xvzf /tmp/{} -C {}".format
+            (compressed_file, remote_path))
+        run("sudo rm /tmp/{}".format(compressed_file))
+        run("sudo mv {}/web_static/* {}".format(remote_path, remote_path))
+        run("sudo rm -rf {}/web_static".format(remote_path))
+        run("sudo rm -rf /data/web_static/current")
+        run("sudo ln -sf {} {}".format(remote_path, sym_link))
         return True
-    except Exception:
+    except Exception as e:
         return False
 
 
 def deploy():
-    """
-        deploy function that creates/distributes an archive
-    """
-    global created_path
-    if created_path is None:
-        created_path = do_pack()
-    if created_path is None:
+    """Create and deploy an archive to a web server."""
+    file_path = do_pack()
+    if file_path is None:
         return False
-    return do_deploy(created_path)
+    return do_deploy(file_path)
