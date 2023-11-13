@@ -17,15 +17,12 @@ def do_pack():
     """
         generates a .tgz archive from contents of web_static
     """
-    time = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-    file_name = "versions/web_static_{}.tgz".format(time)
+    file_name = "versions/web_static_$(date '+%Y%m%d%H%M%S').tgz"
     try:
         local("mkdir -p ./versions")
-        local("tar --create --verbose -z --file={} "
-              "./web_static".format(file_name))
+        local("tar -cvzf{} ./web_static".format(file_name))
         return file_name
-    except Exception as e:
-        print(f"Error in do_pack: {e}")
+    except Exception:
         return None
 
 
@@ -33,7 +30,7 @@ def do_deploy(archive_path):
     """
         using fabric to distribute archive
     """
-    if not os.path.isfile(archive_path):
+    if not os.path.exists(archive_path):
         return False
     try:
         archive = os.path.basename(archive_path)
@@ -53,8 +50,7 @@ def do_deploy(archive_path):
             .format(path, folder[0]))
         print("New version deployed!")
         return True
-    except Exception as e:
-        print(f"Error in do_deploy: {e}")
+    except Exception:
         return False
 
 
@@ -68,7 +64,3 @@ def deploy():
     if created_path is None:
         return False
     return do_deploy(created_path)
-
-
-if __name__ == "__main__":
-    deploy()
