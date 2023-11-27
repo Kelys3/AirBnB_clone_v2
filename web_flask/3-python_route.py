@@ -33,7 +33,7 @@ def python(text="is cool"):
     (replace underscore _ symbols with a space )"""
 
     p_text = text.replace("_", " ")
-    return "Python {}".format(text)
+    return "Python {}".format(p_text)
 
 
 if __name__ == '__main__':
